@@ -30,13 +30,13 @@ type alias Model =
   }
 
 type Life
-  = Alive
+  = Alive Int
   | Dead
 
 flip life =
   case life of
-    Alive -> Dead
-    Dead -> Alive
+    Alive _ -> Dead
+    Dead -> Alive 0
 
 init : {width : Int, height : Int} -> (Model, Cmd msg)
 init {width, height} =
@@ -109,14 +109,23 @@ nextGen field =
                       |> getAsTorus nx ny
                       |> Maybe.withDefault Dead
               )
-              |> List.filter (\nl -> nl == Alive)
+              |> List.filter (\nl -> nl /= Dead)
               |> List.length
+
+          nextAlive =
+            case l of
+              Dead -> Alive 0
+              Alive 7 -> Alive 7
+              Alive n -> Alive (n+1)
         in
           case lives of
             0 -> Dead
             1 -> Dead
-            2 -> l
-            3 -> Alive
+            2 ->
+              if l /= Dead
+              then nextAlive
+              else Dead
+            3 -> nextAlive
             o -> Dead
       )
 
@@ -149,13 +158,23 @@ svgCircle x y life =
     [ cx ((x * 20) + 10 |> String.fromInt)
     , cy ((y * 20) + 10 |> String.fromInt)
     , r "8"
-    , stroke "#FF00FF"
+    , stroke "#888888"
     , fill (case life of
-      Alive -> "#FF00FF"
+      Alive n -> svgColor n
       Dead -> "#FFFFFF")
     , Svg.Events.onClick (Flip x y)
     ][]
 
+svgColor n =
+  case n of
+    1 -> "#FF8800"
+    2 -> "#FFFF00"
+    3 -> "#00FF00"
+    4 -> "#00AA00"
+    5 -> "#00FFFF"
+    6 -> "#0000FF"
+    7 -> "#FF00FF"
+    _ -> "#880000"
 
 
 -- SUBSCRIPTIONS
