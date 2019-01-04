@@ -38,8 +38,9 @@ flip life =
     Alive -> Dead
     Dead -> Alive
 
-init () =
-    ( { field = Array2D.initialize 30 24 (always (always Dead))
+init : {width : Int, height : Int} -> (Model, Cmd msg)
+init {width, height} =
+    ( { field = Array2D.initialize width height (always (always Dead))
       , auto = False
       }
     , Cmd.none
@@ -124,10 +125,12 @@ nextGen field =
 -- VIEW
 
 view {field, auto} =
+  let w = (Array2D.width  field) * 20 |> String.fromInt in
+  let h = (Array2D.height field) * 20 |> String.fromInt in
   div []
     [ div []
       [ svg
-        [ width "640", height "480", viewBox "0 0 640 480", class "life"]
+        [ width w, height h, viewBox ("0 0 "++w++" "++h), class "life"]
         (drawLives field)
       ]
     , input [type_ "button", value "step", onClick Step][]
