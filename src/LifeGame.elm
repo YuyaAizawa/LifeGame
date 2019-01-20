@@ -64,8 +64,7 @@ initField width height =
 type Msg
   = Nop
   | Step
-  | Flip Int Int
-  | MouseDown Life
+  | MouseDown Int Int Life
   | MouseUp
   | MouseOver Int Int
   | ToggleAuto
@@ -81,23 +80,15 @@ update msg model =
           { model | field =
             nextGen model.field }
 
-        Flip x y ->
-          { model | field =
-            let
-              old =
-                Array2D.get x y model.field
-                  |> Maybe.withDefault Dead
-            in
-              Array2D.set x y (flip old) model.field
-          }
-
-        MouseDown life ->
-          { model | mouseOverAction =
+        MouseDown x y life ->
+          { model
+          | mouseOverAction =
               case life of
                 Alive _ ->
                   RemoveLife
                 Dead ->
                   AddLife
+          , field = Array2D.set x y (flip life) model.field
           }
 
         MouseUp ->
@@ -211,11 +202,10 @@ svgCircle x y life =
     , fill (case life of
       Alive n -> svgColor n
       Dead -> "#FFFFFF")
-    , onClick (Flip x y)
-    , Mouse.onDown (\_ -> MouseDown life)
+    , Mouse.onDown (\_ -> MouseDown x y life)
     , Mouse.onUp (\_  -> MouseUp)
     , Mouse.onOver (\_ -> MouseOver x y)
-    , Touch.onStart (\_ -> MouseDown life)
+    , Touch.onStart (\_ -> MouseDown x y life)
     , Touch.onEnd (\_  -> MouseUp)
     , Touch.onMove (\_ -> MouseOver x y)
     ][]
