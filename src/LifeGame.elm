@@ -40,13 +40,14 @@ flip life =
 
 init : {width : Int, height : Int} -> (Model, Cmd msg)
 init {width, height} =
-    ( { field = Array2D.initialize width height (always (always Dead))
+    ( { field = initField width height
       , auto = False
       }
     , Cmd.none
     )
 
-
+initField width height =
+  Array2D.initialize width height (always (always Dead))
 
 -- UPDATE
 
@@ -55,6 +56,7 @@ type Msg
   | Step
   | Flip Int Int
   | ToggleAuto
+  | Reset
 
 update msg model =
   let
@@ -78,6 +80,13 @@ update msg model =
 
         ToggleAuto ->
           { model | auto = not model.auto }
+
+        Reset ->
+          let
+            height = model.field |> Array2D.height
+            width = model.field |> Array2D.width
+          in
+            { model | field = initField width height }
   in
     (nextModel, Cmd.none)
 
@@ -142,6 +151,7 @@ view {field, auto} =
       , span [][text "auto"]
       ]
     , input [type_ "button", value "step", onClick Step][]
+    , input [type_ "button", value "reset", onClick Reset][]
     ]
 
 drawLives field =
