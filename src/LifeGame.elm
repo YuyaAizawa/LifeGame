@@ -7,7 +7,8 @@ import Maybe
 import Html exposing (Html, div, input, label, input, span, text)
 import Html.Attributes exposing (type_, value, style)
 import Html.Events exposing (onClick, onMouseDown, onMouseUp, onMouseOver)
-import Html.Events.Extra.Pointer as Pointer
+import Html.Events.Extra.Mouse as Mouse
+import Html.Events.Extra.Touch as Touch
 import Svg exposing (svg, circle)
 import Svg.Attributes exposing (width, height, viewBox, class, cx, cy, r, fill, stroke)
 import Time
@@ -183,7 +184,7 @@ view {field, auto} =
   let w = (Array2D.width  field) * 20 |> String.fromInt in
   let h = (Array2D.height field) * 20 |> String.fromInt in
   div []
-    [ div [ Pointer.onUp (\_ -> MouseUp) ]
+    [ div [ Mouse.onUp (\_ -> MouseUp) , Touch.onEnd (\_ -> MouseUp)]
       [ svg
         [ width w, height h, viewBox ("0 0 "++w++" "++h), class "life"]
         (drawLives field)
@@ -211,9 +212,12 @@ svgCircle x y life =
       Alive n -> svgColor n
       Dead -> "#FFFFFF")
     , onClick (Flip x y)
-    , Pointer.onDown (\_ -> MouseDown life)
-    , Pointer.onUp (\_  -> MouseUp)
-    , Pointer.onOver (\_ -> MouseOver x y)
+    , Mouse.onDown (\_ -> MouseDown life)
+    , Mouse.onUp (\_  -> MouseUp)
+    , Mouse.onOver (\_ -> MouseOver x y)
+    , Touch.onStart (\_ -> MouseDown life)
+    , Touch.onEnd (\_  -> MouseUp)
+    , Touch.onMove (\_ -> MouseOver x y)
     ][]
 
 svgColor n =
