@@ -6,7 +6,7 @@ import List
 import Maybe
 import Html exposing (Html, div, input, label, input, span, text)
 import Html.Attributes exposing (type_, value, style)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onMouseDown, onMouseUp, onMouseOver)
 import Svg exposing (svg, circle)
 import Svg.Attributes exposing (width, height, viewBox, class, cx, cy, r, fill, stroke)
 import Svg.Events
@@ -25,8 +25,9 @@ main =
 -- MODEL
 
 type alias Model =
-  { field: Array2D Life
-  , auto: Bool
+  { field : Array2D Life
+  , mouseOverAction : MouseOverAction
+  , auto : Bool
   }
 
 type Life
@@ -38,9 +39,15 @@ flip life =
     Alive _ -> Dead
     Dead -> Alive 0
 
+type MouseOverAction
+  = NoAction
+  | AddLife
+  | RemoveLife
+
 init : {width : Int, height : Int} -> (Model, Cmd msg)
 init {width, height} =
     ( { field = initField width height
+      , mouseOverAction = NoAction
       , auto = False
       }
     , Cmd.none
@@ -49,12 +56,17 @@ init {width, height} =
 initField width height =
   Array2D.initialize width height (always (always Dead))
 
+
+
 -- UPDATE
 
 type Msg
   = Nop
   | Step
   | Flip Int Int
+  | MouseDown Life
+  | MouseUp
+  | MouseOver Int Int
   | ToggleAuto
   | Reset
 
@@ -77,6 +89,27 @@ update msg model =
             in
               Array2D.set x y (flip old) model.field
           }
+
+        MouseDown life ->
+          { model | mouseOverAction =
+              case life of
+                Alive _ ->
+                  RemoveLife
+                Dead ->
+                  AddLife
+          }
+
+        MouseUp ->
+          { model | mouseOverAction = NoAction }
+
+        MouseOver x y ->
+          case model.mouseOverAction of
+            NoAction ->
+              model
+            AddLife ->
+              addLife x y model
+            RemoveLife ->
+              removeLife x y model
 
         ToggleAuto ->
           { model | auto = not model.auto }
@@ -133,6 +166,15 @@ nextGen field =
             o -> Dead
       )
 
+addLife x y model =
+  case Array2D.get x y model.field of
+    Just Dead ->
+      { model | field = model.field |> Array2D.set x y (Alive 0) }
+    _ -> model
+
+removeLife x y model =
+  { model | field = model.field |> Array2D.set x y Dead }
+
 
 
 -- VIEW
@@ -141,7 +183,7 @@ view {field, auto} =
   let w = (Array2D.width  field) * 20 |> String.fromInt in
   let h = (Array2D.height field) * 20 |> String.fromInt in
   div []
-    [ div []
+    [ div [ Html.Events.onMouseUp (MouseUp) ]
       [ svg
         [ width w, height h, viewBox ("0 0 "++w++" "++h), class "life"]
         (drawLives field)
@@ -168,7 +210,9 @@ svgCircle x y life =
     , fill (case life of
       Alive n -> svgColor n
       Dead -> "#FFFFFF")
-    , Svg.Events.onClick (Flip x y)
+    , Svg.Events.onMouseDown (MouseDown life)
+    , Svg.Events.onMouseUp (MouseUp)
+    , Svg.Events.onMouseOver (MouseOver x y)
     ][]
 
 svgColor n =
