@@ -4,8 +4,8 @@ import Browser
 import Array2D exposing (Array2D)
 import List
 import Maybe
-import Html exposing (Html, div, input)
-import Html.Attributes exposing (type_, value)
+import Html exposing (Html, div, input, label, input, span, text)
+import Html.Attributes exposing (type_, value, style)
 import Html.Events exposing (onClick)
 import Svg exposing (svg, circle)
 import Svg.Attributes exposing (width, height, viewBox, class, cx, cy, r, fill, stroke)
@@ -54,8 +54,7 @@ type Msg
   = Nop
   | Step
   | Flip Int Int
-  | Start
-  | Stop
+  | ToggleAuto
 
 update msg model =
   let
@@ -77,12 +76,8 @@ update msg model =
               Array2D.set x y (flip old) model.field
           }
 
-        Start ->
-          { model | auto = True }
-
-        Stop ->
-          { model | auto = False }
-
+        ToggleAuto ->
+          { model | auto = not model.auto }
   in
     (nextModel, Cmd.none)
 
@@ -142,10 +137,11 @@ view {field, auto} =
         [ width w, height h, viewBox ("0 0 "++w++" "++h), class "life"]
         (drawLives field)
       ]
+    , label []
+      [ input [type_ "checkbox", onClick ToggleAuto][]
+      , span [][text "auto"]
+      ]
     , input [type_ "button", value "step", onClick Step][]
-    , if auto
-      then input [type_ "button", value "stop", onClick Stop][]
-      else input [type_ "button", value "start", onClick Start][]
     ]
 
 drawLives field =
@@ -175,6 +171,7 @@ svgColor n =
     6 -> "#0000FF"
     7 -> "#FF00FF"
     _ -> "#880000"
+
 
 
 -- SUBSCRIPTIONS
